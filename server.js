@@ -13,7 +13,7 @@ app.use(expressSession({
     secret: 'this is a secret',
     resave: false,
     saveUninitialized: false
-}))
+}));
 //initializes passport and tells express we wnat to use it as middleware (aka app=express)
 app.use(passport.initialize());
 
@@ -22,7 +22,12 @@ app.use(passport.session());
 
 //serializing user data allows for express sessions - bakes a cookie
 passport.serializeUser(function (user, done) {
+    console.log("serialize user: "+ user)
     done(null, user.username);
+});
+passport.deserializeUser(function (user, done) {
+    console.log("deserialize user: "+user)
+    done(null, user);
 });
 
 passport.use(new LocalStrategy(function (username, password, done) {
@@ -35,8 +40,14 @@ passport.use(new LocalStrategy(function (username, password, done) {
 
 //GET routes
 app.get('/success', function (req, res) {
-    res.send("Hey, hello from the server!");
-})
+    if(req.isAuthenticated()) {
+        res.send("Hey, " + req.user + " hello from the server!");
+    }
+    else {
+        res.redirect('/login');
+        console.log('no cookies :(')
+    }
+});
 
 app.get('/login', function (req, res) {
     res.sendFile(__dirname + '/public/login.html');
@@ -49,4 +60,4 @@ app.post('/login', passport.authenticate('local', {
 
 app.listen(8000, function () {
     console.log("Ready for some authentication action");
-})
+});
