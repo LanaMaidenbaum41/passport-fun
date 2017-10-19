@@ -3,20 +3,35 @@ var app = express();
 var passport = require('passport');
 var bodyParser = require('body-parser');
 var LocalStrategy = require('passport-local').Strategy;
+var expressSession = require('express-session');
+
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+app.use(expressSession({
+    secret: 'this is a secret',
+    resave: false,
+    saveUninitialized: false
+}))
 //initializes passport and tells express we wnat to use it as middleware (aka app=express)
 app.use(passport.initialize());
 
-passport.use(new LocalStrategy(function(username, password, done) {
+//this makes sure that our app is using passport.session middleware - ability to use express sessions
+app.use(passport.session());
+
+//serializing user data allows for express sessions - bakes a cookie
+passport.serializeUser(function (user, done) {
+    done(null, user.username);
+});
+
+passport.use(new LocalStrategy(function (username, password, done) {
     if ((username === "john") && (password === "password")) {
-      return done(null, { username: username, id: 1 });
+        return done(null, { username: username, id: 1 });
     } else {
-      return done(null, false);
+        return done(null, false);
     }
-  }));
+}));
 
 //GET routes
 app.get('/success', function (req, res) {
@@ -30,7 +45,6 @@ app.get('/login', function (req, res) {
 app.post('/login', passport.authenticate('local', {
     successRedirect: '/success',
     failureRedirect: '/login',
-    session: false
 }));
 
 app.listen(8000, function () {
